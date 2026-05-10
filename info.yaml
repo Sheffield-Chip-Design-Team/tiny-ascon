@@ -3,7 +3,7 @@ project:
   title:        "Tiny ASCON"          # Project title
   author:       "Kwashie Andoh, James Ashie Kotey, SHaRC"        # Your name
   discord:      "kingslanding"        # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  ""                    # One line description of what your project does
+  description:  "tiny ascon accelerator."                    # One line description of what your project does
   language:     "Verilog"             # other examples include SystemVerilog, Amaranth, VHDL, etc
   clock_hz:     30000000                    # Clock frequency in Hz (or 0 if not applicable)
 
