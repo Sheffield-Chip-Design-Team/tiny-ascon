@@ -1,14 +1,14 @@
 # Tiny Tapeout project information
 project:
-  title:        ""      # Project title
-  author:       ""      # Your name
-  discord:      ""      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  ""      # One line description of what your project does
-  language:     "Verilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
-  clock_hz:     0       # Clock frequency in Hz (or 0 if not applicable)
+  title:        "Tiny ASCON"          # Project title
+  author:       "Kwashie Andoh, James Ashie Kotey, SHaRC"        # Your name
+  discord:      "kingslanding"        # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
+  description:  ""                    # One line description of what your project does
+  language:     "Verilog"             # other examples include SystemVerilog, Amaranth, VHDL, etc
+  clock_hz:     30000000                    # Clock frequency in Hz (or 0 if not applicable)
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
-  tiles: "1x1"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
+  tiles: "2x2"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
   top_module:  "tt_um_example"
@@ -23,8 +23,8 @@ project:
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
 pinout:
   # Inputs
-  ui[0]: ""
-  ui[1]: ""
+  ui[0]: "pin"
+  ui[1]: "pin"
   ui[2]: ""
   ui[3]: ""
   ui[4]: ""
@@ -34,7 +34,7 @@ pinout:
 
   # Outputs
   uo[0]: ""
-  uo[1]: ""
+  uo[1]: "pin"
   uo[2]: ""
   uo[3]: ""
   uo[4]: ""
@@ -47,7 +47,7 @@ pinout:
   uio[1]: ""
   uio[2]: ""
   uio[3]: ""
-  uio[4]: ""
+  uio[4]: "pin"
   uio[5]: ""
   uio[6]: ""
   uio[7]: ""

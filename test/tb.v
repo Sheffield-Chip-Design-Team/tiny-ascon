@@ -5,14 +5,6 @@
    that can be driven / tested by the cocotb test.py.
 */
 module tb ();
-
-  // Dump the signals to a FST file. You can view it with gtkwave or surfer.
-  initial begin
-    $dumpfile("tb.fst");
-    $dumpvars(0, tb);
-    #1;
-  end
-
   // Wire up the inputs and outputs:
   reg clk;
   reg rst_n;
@@ -27,8 +19,8 @@ module tb ();
   wire VGND = 1'b0;
 `endif
 
-  // Replace tt_um_example with your module name:
-  tt_um_example user_project (
+  // Instantiate the Tiny Tapeout top module:
+  tt_um_kingslanding_tiny_ascon_top user_project (
 
       // Include power ports for the Gate Level test:
 `ifdef GL_TEST
@@ -45,5 +37,12 @@ module tb ();
       .clk    (clk),      // clock
       .rst_n  (rst_n)     // not reset
   );
+
+  // Dump the signals to a FST file. You can view it with gtkwave or surfer.
+  initial begin
+    $dumpfile("ascon_tb.fst");
+    $dumpvars(0, tb);
+    #1;
+  end
 
 endmodule
