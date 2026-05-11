@@ -31,9 +31,13 @@ module tt_um_kingslanding_tiny_ascon_top (
     .phase_ready    (uio_out[6])
   );
 
-  assign uio_oe = 8'b0100_0000; 
+  assign uio_out[7] = 1'b0;
+  assign uio_out[5:0] = 6'b000000;
+  assign uio_oe = 8'b0100_0000;
 
   // List all unused inputs to prevent warnings
-  wire _unused_ok = &{ena, uio_out[7],uio_out[5:0],uio_oe};
+  /* verilator lint_off UNUSEDSIGNAL */
+  wire _unused_ok = &{ena, uio_in[7], uio_in[5:0]};
+  /* verilator lint_on UNUSEDSIGNAL */
 
 endmodule

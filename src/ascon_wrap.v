@@ -7,7 +7,7 @@ module ascon_wrap (
   input wire         en,
   input wire         phase_valid,
   input wire         last_byte,
-  input reg   [1:0]  bdi_type,
+  input wire  [1:0]  bdi_type,
   input wire         ad_en,
   input wire         encrypt_en,
   input wire  [7:0]  byte_in,
@@ -49,18 +49,20 @@ localparam SHIFT_KEY_IN       = 3'd1;
 localparam SHIFT_NONCE_IN     = 3'd2;
 localparam SHIFT_AD_IN        = 3'd3;
 
+
+
 localparam SHIFT_PLAINTEXT_IN = 3'd4;
 localparam SHIFT_BDO_OUT      = 3'd5;
 localparam COLLECT_TAG        = 3'd6;
-
 // ========== Internal Signals ==========
  
   // ASCON core interface signals
-  reg [127:0]  key;
+  // TODO - do we need a reg for key?
   reg          key_valid;
   wire         key_ready;
 
-  reg [127:0]  bdi;
+  // TODO do we need a reg for bdi vectors?
+
   reg [15:0]   bdi_valid;
   reg          bdi_eot;
   reg          bdi_eoi;
@@ -68,7 +70,7 @@ localparam COLLECT_TAG        = 3'd6;
 
   wire         bdo_ready;
   wire [127:0] w_bdo;
-  reg  [127:0] bdo_reg; 
+  // TODO - do we need regs for bdo outputs?
 
   wire         bdo_valid;
   wire [1:0]   bdo_type;
@@ -84,7 +86,6 @@ localparam COLLECT_TAG        = 3'd6;
   reg [5:0]    phase_cntr;
   reg [1:0]    plaintext_chunk_cntr; 
   reg          data_shift_en;
-  reg          prev_data_shift_en;
 
   reg [127:0] data_shift_reg;      // only use this one register for shifting 
   reg         last_byte_p;
@@ -93,7 +94,7 @@ localparam COLLECT_TAG        = 3'd6;
 
   assign decrypt_en = ~encrypt_en;
   
-  always @(posedge clk) begin
+  always @(posedge clk or posedge rst) begin
     if (rst) begin
       ctrl_state <= IDLE;
     end else begin
@@ -101,60 +102,44 @@ localparam COLLECT_TAG        = 3'd6;
     end
   end
 
-  always @(posedge clk) begin
-    if (~rst) begin
-      prev_last_byte    <= last_byte;
-      last_byte_p       <= last_byte & ~prev_last_byte; 
-      last_byte_p_delay <= last_byte_p;
-    end else begin
+  always @(posedge clk or posedge rst) begin
+    if (rst) begin
       prev_last_byte    <= 0;
       last_byte_p       <= 0;
       last_byte_p_delay <= 0;
+    end else begin
+      prev_last_byte    <= last_byte;
+      last_byte_p       <= last_byte & ~prev_last_byte; 
+      last_byte_p_delay <= last_byte_p;
     end
   end
 
-  always @(posedge clk) begin
+  // Minimal output wiring for now: expose the least-significant byte of the
+  // core's BDO bus.
+  assign byte_out = w_bdo[7:0];
+
+  // Always ready to accept BDO from the core (encryption path).
+  assign bdo_ready = 1'b1;
+
+  // TODO - fix these unused signals
+  wire _unused_ok = &{ad_en, bdo_valid, bdo_type, auth, auth_valid, done, bdi_ready, key_ready, w_bdo[127:8]};
+
+  always @(posedge clk or posedge rst) begin
     if (rst) begin
-      prev_data_shift_en <= 0;
-    end else begin 
-      prev_data_shift_en <= data_shift_en;
-    end
-  end
-
-  // select where the shifted data is going depenginn on the current phase
-  always @(*) begin
-    case (ctrl_state)
-      IDLE: begin
-        key = data_shift_reg;
-      end
-      SHIFT_KEY_IN: begin
-        key = data_shift_reg;
-      end
-      SHIFT_NONCE_IN, SHIFT_AD_IN, SHIFT_PLAINTEXT_IN: begin
-        bdi = data_shift_reg;
-      end
-      SHIFT_BDO_OUT: begin
-        bdo_reg = data_shift_reg;
-      end
-      default: begin
-        bdi = data_shift_reg;
-      end
-    endcase
-  end
-
-  always @(posedge clk) begin
+      // Conservative reset to avoid X-propagation.
+      key_valid            <= 1'b0;
+      bdi_valid            <= 16'd0;
+      bdi_eot              <= 1'b0;
+      bdi_eoi              <= 1'b0;
+      next_ctrl_state      <= IDLE;
+      phase_cntr           <= 6'd0;
+      plaintext_chunk_cntr <= 2'd0;
+      data_shift_en        <= 1'b0;
+      data_shift_reg       <= 128'd0;
+      phase_ready          <= 1'b1;
+    end else begin
     case (ctrl_state)
       IDLE: begin  
-        
-        // reset counter at the start of the phase
-        key_valid      <= 0;
-        phase_cntr     <= 0; 
-        phase_ready    <= 1;
-        data_shift_en  <= 0;
-        bdi_valid      <= 0;
-        bdi_eot        <= 0;
-        bdi_eoi        <= 0;
-        
         if (en && key_ready && encrypt_en) begin
           next_ctrl_state <= SHIFT_KEY_IN;
           phase_ready     <= 0; // Assert phase_ready to indicate we are ready for key input  
@@ -284,7 +269,8 @@ localparam COLLECT_TAG        = 3'd6;
       next_ctrl_state <= IDLE;
     end
     endcase
-end
+    end
+  end
 
 // ======= ASCON Core Instance =======
 
@@ -307,7 +293,7 @@ end
     .bdi_ready     (bdi_ready),
     // ========== Block Data Output (BDO) ==========
     .bdo_ready     (bdo_ready),
-    .bdo           (),
+    .bdo           (w_bdo),
     .bdo_valid     (bdo_valid),
     .bdo_type      (bdo_type),
     // ========== Status Output ==========
