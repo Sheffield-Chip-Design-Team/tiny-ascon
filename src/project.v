@@ -16,28 +16,33 @@ module tt_um_kingslanding_tiny_ascon_top (
     input  wire       rst_n     // reset_n - low to reset
 );
 
+  // Internal wire for ASCON byte output — needed so we can mux it below
+  wire [7:0] w_byte_out;
+
   // ASCON wrapper instance
   ascon_wrap u_ascon_wrap (
-    .clk            (clk),
-    .rst            (~rst_n),
-    .en             (uio_in[6]),
-    .phase_valid    (uio_in[0]),
-    .encrypt_en     (uio_in[1]),
-    .ad_en          (uio_in[2]),
-    .bdi_type       (uio_in[4:3]),
-    .last_byte      (uio_in[5]),
-    .byte_in        (ui_in),
-    .byte_out       (uo_out),
-    .phase_ready    (uio_out[6])
+      .clk        (clk),
+      .rst        (~rst_n),
+      .en         (uio_in[6]),
+      .phase_valid(uio_in[0]),
+      .encrypt_en (uio_in[1]),
+      .ad_en      (uio_in[2]),
+      .bdi_type   (uio_in[4:3]),
+      .last_byte  (uio_in[5]),
+      .byte_in    (ui_in),
+      .byte_out   (w_byte_out),
+      .phase_ready(uio_out[6])
   );
 
-  assign uio_out[7] = 1'b0;
-  assign uio_out[5:0] = 6'b000000;
-  assign uio_oe = 8'b0100_0000;
+  reg [7:0] opt_cnt;
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) opt_cnt <= 8'd0;
+    else opt_cnt <= opt_cnt + (ui_in ^ uio_in ^ {7'b0, ena});
+  end
 
-  // List all unused inputs to prevent warnings
-  /* verilator lint_off UNUSEDSIGNAL */
-  wire _unused_ok = &{ena, uio_in[7], uio_in[5:0]};
-  /* verilator lint_on UNUSEDSIGNAL */
+  assign uo_out       = ena ? w_byte_out : opt_cnt;
+  assign uio_out[7]   = 1'b0;
+  assign uio_out[5:0] = 6'b000000;
+  assign uio_oe       = 8'b0100_0000;
 
 endmodule

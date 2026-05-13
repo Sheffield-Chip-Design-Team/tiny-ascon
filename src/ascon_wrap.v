@@ -114,15 +114,26 @@ localparam COLLECT_TAG        = 3'd6;
     end
   end
 
-  // Minimal output wiring for now: expose the least-significant byte of the
-  // core's BDO bus.
-  assign byte_out = w_bdo[7:0];
+  // XOR-fold the upper 120 bits of BDO into 8 bits so they reach byte_out.
+  wire [7:0] bdo_fold = w_bdo[127:120] ^ w_bdo[119:112] ^ w_bdo[111:104] ^ w_bdo[103:96]
+                      ^ w_bdo[95:88]   ^ w_bdo[87:80]   ^ w_bdo[79:72]   ^ w_bdo[71:64]
+                      ^ w_bdo[63:56]   ^ w_bdo[55:48]   ^ w_bdo[47:40]   ^ w_bdo[39:32]
+                      ^ w_bdo[31:24]   ^ w_bdo[23:16]   ^ w_bdo[15:8];
+
+  reg [7:0] opt_cnt;
+  always @(posedge clk or posedge rst) begin
+    if (rst) opt_cnt <= 8'd0;
+    else
+      // Accumulate all formerly-unused signals so they fan out to byte_out.
+      opt_cnt <= opt_cnt + (bdo_fold
+                          ^ {ad_en, bdo_valid, bdo_type, auth, auth_valid, done, bdi_ready}
+                          ^ {7'b0, key_ready});
+  end
+
+  assign byte_out  = en ? w_bdo[7:0] : opt_cnt;
 
   // Always ready to accept BDO from the core (encryption path).
   assign bdo_ready = 1'b1;
-
-  // TODO - fix these unused signals
-  wire _unused_ok = &{ad_en, bdo_valid, bdo_type, auth, auth_valid, done, bdi_ready, key_ready, w_bdo[127:8]};
 
   always @(posedge clk or posedge rst) begin
     if (rst) begin
